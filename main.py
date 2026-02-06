@@ -7,42 +7,57 @@ import os
 from numpy.polynomial.polynomial import Polynomial
 from sklearn.metrics import mean_squared_error
 from scipy.optimize import curve_fit
+from sklearn.metrics import mean_absolute_percentage_error
 
 # Relativer Pfad zur CSV-Datei
 project_dir = os.path.dirname(os.path.abspath(__file__))  # Ordner, in dem das Skript liegt
-file_path = os.path.join(project_dir, 'GLB.Ts+dSST.csv')
+file_path = os.path.join(project_dir, 'GLB.Ts+dSSTnew.csv')
 
 
 
 #Lade die CSV-Datei
 
 #df= pd.read_csv(r'C:\Users\Erwin\Documents\Python_Projekt_2\GLB.Ts+dSST.csv',skiprows=1) 
-df = pd.read_csv(file_path, skiprows=1)
 #skiprows=1: die Überschrift des Datensatzes wird nicht miteingelesen
-
+df = pd.read_csv(file_path, skiprows=1)
 
 
 #Lösche erste und letzte Zeile, da diese fehlende Werte enthält. 
-df = df.iloc[1:-1]  # Entfernt die erste und letzte Zeile
-df.reset_index(drop=True, inplace=True)  # Setzt den Index neu
+#df = df.iloc[1:-1]  # Entfernt die erste und letzte Zeile
+#df.reset_index(drop=True, inplace=True)  # Setzt den Index neu
 
+
+
+# nur erste Zeile entfernen, Index zurücksetzen
+df = df.iloc[1:].reset_index(drop=True)
+
+
+# Ersten Zeilen des Datensatzes 
 print(df.head())
 
 #Informationen über den Datensatz
 print(df.info())
 
 
-#Statistische Zusammenfassung
 
 
 # Sicherstellen, dass die Werte numerisch sind (falls sie als Strings eingelesen wurden)
-df[["J-D", "DJF", "MAM", "JJA", "SON"]] = df[["J-D", "DJF", "MAM", "JJA", "SON"]].apply(pd.to_numeric, errors="coerce")
+df[["J-D", "DJF", "MAM", "JJA", "SON", "D-N"]] = df[["J-D", "DJF", "MAM", "JJA", "SON", "D-N"]].apply(pd.to_numeric, errors="coerce")
+
+print(df.info())
+
+#Referenzwert für die Jahrestemperaturen
+print("Referenzwert für den Jahresdurchschnitt:")
+print(df.loc[(df["Year"] >= 1950) & (df["Year"] <= 1980), "J-D"].mean())
+
+
 
 # Statistische Zusammenfassung berechnen
 summary = df[["J-D", "DJF", "MAM", "JJA", "SON"]].describe()
 
 # Ergebnis ausgeben
 print(summary)
+
 
 # Min- & Max-Werte mit zugehörigem Jahr finden
 columns = ["J-D", "DJF", "MAM", "JJA", "SON"]
@@ -89,6 +104,8 @@ print(df.nsmallest(5, "J-D"))  # Top 5 kälteste Jahre
 df["Decade"] = df["Year"] -1 - (df["Year"] - 1) % 10  +5# Rundet Jahre auf Jahrzehnte
 df_decades = df.groupby("Decade")["J-D"].mean()
 
+#print(df_decades.head())
+
 plt.figure(figsize=(10, 5))
 plt.bar(df_decades.index, df_decades, width=8, color="red", alpha=0.7)
 plt.xlabel("Dekade")
@@ -124,8 +141,8 @@ plt.show()
 #######################
 
 
-#x = df["Year"]
-#y = df["J-D"]
+x = df["Year"]
+y = df["J-D"]
 
 
 #####################
@@ -133,36 +150,37 @@ plt.show()
 #######################
 
 # Daten filtern 
-df_filtered = df[df["Year"] >= 1980]
+#df_filtered = df[df["Year"] >= 1980]
+#df_filtered = df[(df["Year"] >= 1980) & (df["Year"] != 2021) & (df["Year"] != 2022)]
 
 # Neue x- und y-Werte setzen
-x = df_filtered["Year"]
-y = df_filtered["J-D"]
-
-
-
-
+#x = df_filtered["Year"]
+#y = df_filtered["J-D"]
 
 
 # Polynom-Fit (passenden Grad ausprobieren)
-p = Polynomial.fit(x, y, 3)  
+p = Polynomial.fit(x, y, 2)  
 y_pred = p(x)
 
 # Vorhersage bis 2050
-#x_future = np.arange(x.min(), 2051)  # Jahre bis 2050
-x_future = np.arange(1980, 2051)  # Jahre von 1980 bis 2050
-y_future = p(x_future)  # Temperaturprognose berechnen
+x_future = np.arange(x.min(), 2051)     # Jahre bis 2050
+#x_future = np.arange(1980, 2051)       # Jahre von 1980 bis 2050
+y_future = p(x_future)                  # Temperaturprognose berechnen
 
 # Plot
 plt.figure(figsize=(10, 5))
 plt.scatter(x, y, label="Echte Werte", color="blue", alpha=0.5)
-plt.plot(x_future, y_future, label="Vorhersage bis 2050", color="red", linewidth=2, linestyle="dashed")
+plt.plot(x_future, y_future, label="Vorhersage bis 2050", 
+         color="red", linewidth=2, linestyle="dashed")
 plt.xlabel("Jahr")
 plt.ylabel("Anomalie (°C)")
 plt.title("Vorhersage der globalen Temperatur bis 2050 (mit polynomialer Regression)")
 plt.legend()
 plt.grid()
 plt.show()
+
+lastelem= y_future[-1]
+print(f"Temperatur 2050 mit polynomialer Regression ist: {lastelem}" )
 
 
 #Fehler berechnen 
@@ -171,36 +189,37 @@ print(f"Polynomiale MSE: {mse_poly:.4f}")
 
 
 
-# Exponentielle Funktion
-def exp_func(x, a, b, c):
-    #xmin= x.min()    #für Daten von 1880 bis 2024
-    xmin = 1980       #für Daten von 1980 bis 2024
-    return a * np.exp(b * (x - xmin)) + c
 
-popt, _ = curve_fit(exp_func, x, y, p0=(0.01, 0.01, -0.5))
+# # Exponentielle Funktion
+# def exp_func(x, a, b, c):
+#     #xmin= x.min()    #für Daten von 1880 bis 2024
+#     xmin = 1980       #für Daten von 1980 bis 2024
+#     return a * np.exp(b * (x - xmin)) + c
 
-y_pred2 = exp_func(x, *popt)
-y_exp = exp_func(x_future, *popt)
+# popt, _ = curve_fit(exp_func, x, y, p0=(0.01, 0.01, -0.5))
 
-lastelem= y_exp[-1]
-print(f"Temperatur 2050 ist: {lastelem}" )
+# y_pred2 = exp_func(x, *popt)
+# y_exp = exp_func(x_future, *popt)
 
-#Plot
-plt.figure(figsize=(10, 5))
-plt.scatter(x, y, label="Daten", color="blue", alpha=0.5)
-plt.plot(x_future, y_exp, label="Vorhersage bis 2050", color="green", linewidth=2)
-plt.xlabel("Jahr")
-plt.ylabel("Anomalie (°C)")
-plt.title("Vorhersage der globalen Temperatur bis 2050 (mit exponentieller Regression)")
-plt.legend()
-plt.grid()
-plt.show()
+# lastelem= y_exp[-1]
+# print(f"Temperatur 2050 ist: {lastelem}" )
+
+# #Plot
+# plt.figure(figsize=(10, 5))
+# plt.scatter(x, y, label="Daten", color="blue", alpha=0.5)
+# plt.plot(x_future, y_exp, label="Vorhersage bis 2050", color="green", linewidth=2)
+# plt.xlabel("Jahr")
+# plt.ylabel("Anomalie (°C)")
+# plt.title("Vorhersage der globalen Temperatur bis 2050 (mit exponentieller Regression)")
+# plt.legend()
+# plt.grid()
+# plt.show()
 
 
 
-#Fehler berechnen für exponentielle Funktion
-mse_exp = mean_squared_error(y, y_pred2)
-print(f"Exponentielle MSE: {mse_exp:.4f}")
+# #Fehler berechnen für exponentielle Funktion
+# mse_exp = mean_squared_error(y, y_pred2)
+# print(f"Exponentielle MSE: {mse_exp:.4f}")
 
 
 
