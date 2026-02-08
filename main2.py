@@ -107,24 +107,21 @@ plt.show()
 
 
 
-print("und jetzt kommt die Stunde der Wahrheit: ")
-####################################
+# months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+# x = df[months].values
+# y = df['J-D'].values
 
-months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-x = df[months].values
-y = df['J-D'].values
+# # Ist y der Mittelwert der Monate?
+# y_from_months = x.mean(axis=1)
+# print("max abs diff:", np.nanmax(np.abs(y - y_from_months)))
 
-# Ist y der Mittelwert der Monate?
-y_from_months = x.mean(axis=1)
-print("max abs diff:", np.nanmax(np.abs(y - y_from_months)))
+# # Std und Korrelation
+# stds = np.nanstd(x, axis=0)
+# corrs = [np.corrcoef(x[:,i], y)[0,1] for i in range(12)]
+# df_stats = pd.DataFrame({
+#     'month': months,
+#     'std': stds,
+#     'corr_with_y': corrs
+# }).sort_values('std', ascending=False)
 
-# Std und Korrelation
-stds = np.nanstd(x, axis=0)
-corrs = [np.corrcoef(x[:,i], y)[0,1] for i in range(12)]
-df_stats = pd.DataFrame({
-    'month': months,
-    'std': stds,
-    'corr_with_y': corrs
-}).sort_values('std', ascending=False)
-
-print(df_stats.to_string(index=False))
+# print(df_stats.to_string(index=False))
